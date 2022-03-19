@@ -1,6 +1,24 @@
 #include<stdio.h>
+
+//定义一个函数计算任意整数在内存中存储时有多少个1
+int sum(int x)
+{	int count = 0;
+	int i = 0;
+	for(i=1;i<=32;i++){
+		int ret = x >> i & 1;
+		if(ret == 1){
+			count++;
+		}
+	}
+	return count;
+}
+
+
 int main()
 {
+	//测试sum函数
+	int result =sum(2);
+	printf("result=%d\n",result);
 	/*
 		"/"是整除运算，即分子除以分母
 		"%"是取余运算，结果只取余数
@@ -41,7 +59,9 @@ int main()
 		赋值运算符有：=、+=、-=、*=、/=、%=、>>=、<<=；等
 	*/
 
-
+	short s = 5;
+	printf("%d",sizeof(s=b+2));
+	printf("%d",s);
 
 	return 0;
 }
