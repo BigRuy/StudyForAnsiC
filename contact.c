@@ -8,12 +8,16 @@
 
 /*
 版本提交记录
-1.静态内存版本
-2.动态内存实现自动增长版本
+版本1.静态内存版本
+版本2.动态内存实现自动增长版本
 	通讯录初始化之后可以，能存放3个人的信息
 	当空间存满后，可以增加两个信息
 	实现：3+2+2+2+2·····
+版本3.当通讯录退出时把信息写到文件
+	当通讯录初始化的时候，加载文件的信息到通讯录中
+
 */
+
 
 
 #include<stdio.h>
@@ -65,26 +69,9 @@ enum Option
 	sort,
 	print
 };
-//初始化通讯录函数的实现
-void InitContact(struct Contact* pc)
+//检测增容函数的实现
+void CheckCapacity(struct Contact* pc)
 {
-	pc->data = (struct Peoinfo*)malloc(init_data*sizeof(struct Peoinfo));//申请动态内存空间
-	if(pc->data == NULL){
-		perror("InitContact");
-		return;
-	}
-	pc->sz = 0;//初始化后默认为0
-	//memset()：内存设置
-	//memset(pc->data,0,sizeof(pc->data));
-	pc->capacity = init_data;
-}
-//增加联系人函数的实现
-void AddContact(struct Contact* pc)
-{
-	// if(pc->sz==max_data){
-	// 	printf("通讯类已满，无法添加\n");
-	// 	return;
-	// }
 	if(pc->sz == pc->capacity){
 		//考虑增加动态内存的容量
 		struct Peoinfo* ptr = realloc(pc->data,(pc->capacity+ins_sz)*sizeof(struct Peoinfo));
@@ -98,6 +85,65 @@ void AddContact(struct Contact* pc)
 			return;
 		}
 	}
+}
+//加载文件函数的实现
+void Loadcontact(struct Contact* pc)
+{
+	//打开文件
+	FILE* pf = fopen("","r");
+	if(NULL == pf)
+	{
+		perror("Loadcontact");
+		return;
+	}
+	//读取文件
+	struct Peoinfo tmp = {0};
+	while(fread(&tmp,sizeof(struct Peoinfo),1,pf)){
+		//是否需要增容
+		CheckCapacity(pc);
+		pc->data[pc->sz] = tmp; 
+		pc->sz++;
+	}
+	//关闭文件
+	fclose(pf);
+	pf = NULL;
+}
+//初始化通讯录函数的实现
+void InitContact(struct Contact* pc)
+{
+	pc->data = (struct Peoinfo*)malloc(init_data*sizeof(struct Peoinfo));//申请动态内存空间
+	if(pc->data == NULL){
+		perror("InitContact");
+		return;
+	}
+	pc->sz = 0;//初始化后默认为0
+	//memset()：内存设置
+	//memset(pc->data,0,sizeof(pc->data));
+	pc->capacity = init_data;
+	//加载文件
+	Loadcontact(pc);
+}
+//增加联系人函数的实现
+void AddContact(struct Contact* pc)
+{
+	// if(pc->sz==max_data){
+	// 	printf("通讯类已满，无法添加\n");
+	// 	return;
+	// }
+	// if(pc->sz == pc->capacity){
+	// 	//考虑增加动态内存的容量
+	// 	struct Peoinfo* ptr = realloc(pc->data,(pc->capacity+ins_sz)*sizeof(struct Peoinfo));
+	// 	if(ptr != NULL){
+	// 		pc->data =ptr;
+	// 		pc->capacity += ins_sz;
+	// 		printf("增容成功\n");
+	// 	}else{
+	// 		perror("AddContact");
+	// 		printf("增加联系人失败\n");
+	// 		return;
+	// 	}
+	// }
+	CheckCapacity(pc);
 	//请输入名字
 	//增加一个信息
 	printf("请输入名字:");
@@ -251,6 +297,25 @@ void DestoryContact(struct Contact* pc)
 	pc->sz = 0;
 	pc->capacity = 0;
 }
+//退出通讯录时保存信息到文件中函数的实现
+void SaveContact(struct Contact* pc)
+{
+	//打开文件
+	FILE* pf = fopen("contact.dat","w");
+	if(NULL == pf){
+		perror("SaveContact");
+		return;
+	}
+	//写文件
+	int i = 0;
+	for(i=0;i<pc->sz,i++){
+		fwrite(pc->data+i,sizeof(struct Peoinfo),1,pf);
+	}
+	//关闭文件
+	fclose(pf);
+	pf = NULL;
+}
+
 int main()
 {
 	int input = 0; 
@@ -286,6 +351,8 @@ int main()
 				printCantact(&con);
 				break;
 			case out:
+				//保存信息到文件
+				SaveContact(&con);
 				//销毁通讯录
 				DestoryContact(&con);
 				printf("退出通讯录\n");
